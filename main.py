@@ -64,9 +64,45 @@ def softmax(x):
     return np.exp(x) / np.sum(np.exp(x), axis=0)
 
 
+# def feed_forward(n, w, b):
+#     for i in range(n.size() - 1):
+#         n[i + 1] = w[i].dot(n[i]) + b[i]
+
+
 if __name__ == '__main__':
-    x = np.linspace(-10, 10)
-    plt.plot(x, gaussian(x))
-    plt.axis('tight')
-    plt.title('Activation Function :binaryStep')
-    plt.show()
+    """User must set these:   """
+    epoch = 20
+    layer_num = 3
+    input_neuron_num = 8
+    hiddenL_neuron_num = [4, 3]  # 8 4 3
+    neurons = [np.random.randint(-10, 10, input_neuron_num)]
+
+    for i in hiddenL_neuron_num:
+        neurons.append(np.zeros(i).T)
+    print(neurons)
+
+    """Making random wights and biases"""
+    wi = []
+    bi = []
+    for i in range(layer_num - 1):
+        if i == 0:
+            tmp = np.random.rand(hiddenL_neuron_num[0], input_neuron_num)
+            temp = np.random.rand(hiddenL_neuron_num[0], 1)
+        else:
+            tmp = np.random.rand(hiddenL_neuron_num[i], hiddenL_neuron_num[i - 1])
+            temp = np.random.rand(hiddenL_neuron_num[i], 1)
+        wi.append(tmp)
+        bi.append(temp)
+        # print(tmp)
+        # print(temp)
+    # print(wi)
+    # print(bi)
+
+    # for i in range(epoch):
+    #     feed_forward(neurons, wi, bi, activation_function)
+
+    # x = np.linspace(-10, 10)
+    # plt.plot(x, gaussian(x))
+    # plt.axis('tight')
+    # plt.title('Activation Function :binaryStep')
+    # plt.show()
