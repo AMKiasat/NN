@@ -27,10 +27,10 @@ def saturated_linear(x):
     returns the given input."""
     x1 = []
     for i in x:
-        if i < -1:
-            x1.append(-1)
-        elif i > 1:
-            x1.append(1)
+        if i[0] < -1:
+            x1.append([-1])
+        elif i[0] > 1:
+            x1.append([1])
         else:
             x1.append(i)
 
@@ -51,8 +51,9 @@ def ReLU(x):
     """ It returns zero if the input is less than zero otherwise it returns the given input. """
     x1 = []
     for i in x:
-        if i < 0:
-            x1.append(0)
+        # print(i)
+        if i[0] < 0:
+            x1.append([0])
         else:
             x1.append(i)
 
@@ -64,9 +65,29 @@ def softmax(x):
     return np.exp(x) / np.sum(np.exp(x), axis=0)
 
 
-# def feed_forward(n, w, b):
-#     for i in range(n.size() - 1):
-#         n[i + 1] = w[i].dot(n[i]) + b[i]
+def feed_forward(n, w, b, af):
+    for i in range(n.__len__() - 1):
+        tmp = w[i].dot(n[i]) + b[i]
+        # print(tmp, "\n")
+
+        if af == 0:
+            n[i + 1] = gaussian(tmp)
+        elif af == 1:
+            n[i + 1] = sigmoid(tmp)
+        elif af == 2:
+            n[i + 1] = step(tmp)
+        elif af == 3:
+            n[i + 1] = sign(tmp)
+        elif af == 4:
+            n[i + 1] = saturated_linear(tmp)
+        elif af == 5:
+            n[i + 1] = linear(tmp)
+        elif af == 6:
+            n[i + 1] = tanh(tmp)
+        elif af == 7:
+            n[i + 1] = ReLU(tmp)
+        elif af == 8:
+            n[i + 1] = softmax(tmp)
 
 
 if __name__ == '__main__':
@@ -75,11 +96,11 @@ if __name__ == '__main__':
     layer_num = 3
     input_neuron_num = 8
     hiddenL_neuron_num = [4, 3]  # 8 4 3
-    neurons = [np.random.randint(-10, 10, input_neuron_num)]
+    neurons = [np.random.randint(-10, 10, size=(input_neuron_num, 1))]
+    activation_function = 2
 
     for i in hiddenL_neuron_num:
         neurons.append(np.zeros(i).T)
-    print(neurons)
 
     """Making random wights and biases"""
     wi = []
@@ -93,13 +114,14 @@ if __name__ == '__main__':
             temp = np.random.rand(hiddenL_neuron_num[i], 1)
         wi.append(tmp)
         bi.append(temp)
-        # print(tmp)
         # print(temp)
     # print(wi)
     # print(bi)
 
-    # for i in range(epoch):
-    #     feed_forward(neurons, wi, bi, activation_function)
+    for i in range(epoch):
+        feed_forward(neurons, wi, bi, activation_function)
+        # for i in neurons:
+        #     print(i, "\n")
 
     # x = np.linspace(-10, 10)
     # plt.plot(x, gaussian(x))
