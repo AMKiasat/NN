@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 
 
@@ -7,8 +8,8 @@ def gaussian(x):
     return np.exp(-1 * np.square(x))
 
 
-def gaussian_derivative(x, sigma):
-    return (-x / sigma ** 2) * np.exp(-x ** 2 / (2 * sigma ** 2))
+def gaussian_derivative(x):
+    return -2 * x * np.exp(-1 * np.square(x))
 
 
 def sigmoid(x):
@@ -135,50 +136,126 @@ def softmax_derivative(x):
 
 
 def feed_forward(n, w, b, af):
-    for k in range(1):
+    for k in range(len(n) - 1):
         temp = w[k].dot(n[k]) + b[k]
+        # print(b[k])
 
         if af == 0:
-            n[k + 1] = gaussian(temp)
+            neuro = gaussian(temp)
         elif af == 1:
-            n[k + 1] = sigmoid(temp)
+            neuro = sigmoid(temp)
         elif af == 2:
-            n[k + 1] = step(temp)
+            neuro = step(temp)
         elif af == 3:
-            n[k + 1] = sign(temp)
+            neuro = sign(temp)
         elif af == 4:
-            n[k + 1] = saturated_linear(temp)
+            neuro = saturated_linear(temp)
         elif af == 5:
-            n[k + 1] = linear(temp)
+            neuro = linear(temp)
         elif af == 6:
-            n[k + 1] = tanh(temp)
+            neuro = tanh(temp)
         elif af == 7:
-            n[k + 1] = relu(temp)
+            neuro = relu(temp)
         elif af == 8:
-            n[k + 1] = softmax(temp)
+            neuro = softmax(temp)
+        if math.isnan(neuro[0][0]):
+            return
+        n[k + 1] = neuro
 
 
-# def back_propagate(n, w, b, af, label):
-#     loss = label - n[-1]
-#     if af == 0:
-#         n[i + 1] = gaussian(tmp)
+def back_propagate(n, w, b, af, label, lr):
+    loss = label - n[-1]
+    # loss = loss.T
+    # print(label, "\n")
+    # print(n[-1], "\n")
+    # print(loss, "\n")
+    if af == 0:
+        delta = loss * gaussian_derivative(n[-1])
+    elif af == 1:
+        delta = loss * sigmoid_derivative(n[-1])
+    elif af == 2:
+        delta = loss * step_derivative(n[-1])
+    elif af == 3:
+        delta = loss * sign_derivative(n[-1])
+    elif af == 4:
+        delta = loss * saturated_linear_derivative(n[-1])
+    elif af == 5:
+        delta = loss * linear_derivative(n[-1])
+    elif af == 6:
+        delta = loss * tanh_derivative(n[-1])
+    elif af == 7:
+        delta = loss * relu_derivative(n[-1])
+    elif af == 8:
+        delta = loss * softmax_derivative(n[-1])
+
+    next_w = w[-1].copy()
+    # print(b[-1], '\n')
+    b[-1] += np.sum(delta, axis=0, keepdims=True) * lr
+    # print(delta.flatten())
+    # print(b[-1], "\n")
+    for k in range(len(w[-1].T)):
+        # print(w[-1].T[k])
+        w[-1].T[k] += (lr * delta * n[-2][k]).flatten()
+        # print(n[-2][k])
+        # print((delta * n[-2][k]).flatten())
+        # print((lr * delta * n[-2][k]).flatten())
+        # print(next_w.T[k])
+        # print(w[-1].T[k], "\n")
+
+    for k in reversed(range(len(w) - 1)):
+        loss = next_w.T.dot(delta)
+        # loss = loss.T
+        # print(label, "\n")
+        # print(n[-1], "\n")
+        # print(loss, "\n")
+        if af == 0:
+            delta = loss * gaussian_derivative(n[k + 1])
+        elif af == 1:
+            delta = loss * sigmoid_derivative(n[k + 1])
+        elif af == 2:
+            delta = loss * step_derivative(n[k + 1])
+        elif af == 3:
+            delta = loss * sign_derivative(n[k + 1])
+        elif af == 4:
+            delta = loss * saturated_linear_derivative(n[k + 1])
+        elif af == 5:
+            delta = loss * linear_derivative(n[k + 1])
+        elif af == 6:
+            delta = loss * tanh_derivative(n[k + 1])
+        elif af == 7:
+            delta = loss * relu_derivative(n[k + 1])
+        elif af == 8:
+            delta = loss * softmax_derivative(n[k + 1])
+        next_w = w[k].copy()
+        # print(b, '\n')
+        b[k] += np.sum(delta, axis=0, keepdims=True) * lr
+        # print(delta.flatten())
+        # print(b[k], "\n")
+        for j in range(len(w[k].T)):
+            # print(w[k].T[j])
+            w[k].T[j] += (lr * delta * n[k][j]).flatten()
+            # print(n[k][j])
+            # print((delta * n[k][j]).flatten())
+            # print((lr * delta * n[k][j]).flatten())
+            # print(next_w.T[j])
+            # print(w[k].T[j], "\n")
 
 
 if __name__ == '__main__':
-    """User must set these:   """
-    epoch = 1
-    learning_rate = 0.5
+    """ User must set these: """
+    epoch = 2000
+    learning_rate = 0.1
     layer_num = 3
     input_neuron_num = 8
     hiddenL_neuron_num = [4, 3]  # 8 4 3
-    neurons = [np.random.randint(-10, 10, size=(input_neuron_num, 1))]
-    output_label = [0, 1, 0]
-    activation_function = 2
+    neurons = [np.random.randint(-3, 3, size=(input_neuron_num, 1))]
+    output_label = np.array([[1], [0], [0]])
+    activation_function = 1
 
     for i in hiddenL_neuron_num:
         neurons.append(np.zeros(i).T)
 
-    """Making random wights and biases"""
+    """ Making random wights and biases """
     wi = []
     bi = []
     for i in range(layer_num - 1):
@@ -189,17 +266,10 @@ if __name__ == '__main__':
         wi.append(tmp)
         bias = np.random.rand(1, 1)
         bi.append(bias)
-    # print(wi)
-    # print(bi)
 
+    """ Training with epoch """
     for i in range(epoch):
         feed_forward(neurons, wi, bi, activation_function)
-        # for i in neurons:
-        #     print(i, "\n")
-        # back_propagate(neurons, wi, bi, activation_function, output_label)
+        back_propagate(neurons, wi, bi, activation_function, output_label, learning_rate)
+        print(neurons[-1])
 
-    # x = np.linspace(-10, 10)
-    # plt.plot(x, gaussian(x))
-    # plt.axis('tight')
-    # plt.title('Activation Function :binaryStep')
-    # plt.show()
