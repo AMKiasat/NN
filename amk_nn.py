@@ -279,9 +279,7 @@ def train(data, label, layer_num, hiddenL_neuron_num, activation_function=1, epo
             neurons.append(np.zeros(output_neuron_num).T)
             feed_forward(neurons, wi, bi, activation_function)
             back_propagate(neurons, wi, bi, activation_function, label01[j], learning_rate)
-            print(label[j])
-            print(neurons[-1].T)
-            
+
     with open('wights.pkl', 'wb') as file:
         pickle.dump(len(wi), file)
         for array in wi:
@@ -290,6 +288,27 @@ def train(data, label, layer_num, hiddenL_neuron_num, activation_function=1, epo
         pickle.dump(len(bi), file)
         for array in bi:
             np.save(file, array)
+    with open('activation_function.txt', 'w') as file:
+        file.write(str(activation_function))
 
-# def test(data):
-#     print()
+
+def test(data):
+    with open('wights.pkl', 'rb') as file:
+        wights = pickle.load(file)
+        wi = [np.load(file) for _ in range(wights)]
+    with open('biases.pkl', 'rb') as file:
+        biases = pickle.load(file)
+        bi = [np.load(file) for _ in range(biases)]
+    with open('activation_function.txt', 'r') as file:
+        activation_function = int(file.read())
+
+    output_label = []
+    for j in range(len(data)):
+        tmp = np.array(data[j])
+        neurons = [tmp[:, np.newaxis]]
+        for k in wi:
+            # print(k.shape)
+            neurons.append(np.zeros(k.shape[0]).T)
+        feed_forward(neurons, wi, bi, activation_function)
+        output_label.append(np.argmax(neurons[-1]))
+    return output_label
