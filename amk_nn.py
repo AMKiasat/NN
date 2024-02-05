@@ -28,12 +28,12 @@ def step(x):
 
 
 def step_derivative(x):
-    x1 = []
-    for k in x:
-        if k[0] == 0:
-            x1.append([1])
+    x1 = np.empty_like(x)
+    for k in range(len(x)):
+        if x[k][0] == 0:
+            x1[k][0] = 1
         else:
-            x1.append([0])
+            x1[k][0] = 0
     return x1
 
 
@@ -43,39 +43,39 @@ def sign(x):
 
 
 def sign_derivative(x):
-    x1 = []
-    for k in x:
-        if k[0] == 0:
-            x1.append([1])
+    x1 = np.empty_like(x)
+    for k in range(len(x)):
+        if x[k][0] == 0:
+            x1[k][0] = 1
         else:
-            x1.append([0])
+            x1[k][0] = 0
     return x1
 
 
 def saturated_linear(x):
     """ It returns '-1' if the input is less than -1 & returns '1' if the input is greater than 1 otherwise it
     returns the given input."""
-    x1 = []
-    for k in x:
-        if k[0] < -1:
-            x1.append([-1])
-        elif k[0] > 1:
-            x1.append([1])
+    x1 = np.empty_like(x)
+    for k in range(len(x)):
+        if x[k][0] < -1:
+            x1[k][0] = -1
+        elif x[k][0] > 1:
+            x1[k][0] = 1
         else:
-            x1.append(k)
+            x1[k][0] = k
 
     return x1
 
 
 def saturated_linear_derivative(x):
-    x1 = []
-    for k in x:
-        if k[0] < -1:
-            x1.append([0])
-        elif k[0] > 1:
-            x1.append([0])
+    x1 = np.empty_like(x)
+    for k in range(len(x)):
+        if x[k][0] < -1:
+            x1[k][0] = 0
+        elif x[k][0] > 1:
+            x1[k][0] = 0
         else:
-            x1.append([1])
+            x1[k][0] = 1
 
     return x1
 
@@ -86,9 +86,10 @@ def linear(x):
 
 
 def linear_derivative(x):
-    x1 = []
-    for _ in x:
-        x1.append([1])
+    x1 = np.empty_like(x)
+    for k in range(len(x)):
+        x1[k][0] = 1
+
     return x1
 
 
@@ -103,37 +104,58 @@ def tanh_derivative(x):
 
 def relu(x):
     """ It returns zero if the input is less than zero otherwise it returns the given input. """
-    x1 = []
-    for k in x:
+    x1 = np.empty_like(x)
+    for k in range(len(x)):
         # print(i)
-        if k[0] < 0:
-            x1.append([0])
+        if x[k][0] < 0:
+            x1[k][0] = 0
         else:
-            x1.append(k)
+            x1[k][0] = k
 
     return x1
 
 
 def relu_derivative(x):
-    x1 = []
-    for k in x:
+    x1 = np.empty_like(x)
+    for k in range(len(x)):
         # print(i)
-        if k[0] < 0:
-            x1.append([0])
+        if x[k][0] < 0:
+            x1[k][0] = 0
         else:
-            x1.append([1])
+            x1[k][0] = 1
 
     return x1
 
 
 def softmax(x):
     """ Compute softmax values for each sets of scores in x. """
-    return np.exp(x) / np.sum(np.exp(x), axis=0)
+    return np.exp(x) / np.sum(np.exp(x))
 
 
 def softmax_derivative(x):
     s = softmax(x)
     return s * (1 - s)
+
+
+def af_derivative_cal(l, x, a):
+    if a == 0:
+        return l * gaussian_derivative(x)
+    elif a == 1:
+        return l * sigmoid_derivative(x)
+    elif a == 2:
+        return l * step_derivative(x)
+    elif a == 3:
+        return l * sign_derivative(x)
+    elif a == 4:
+        return l * saturated_linear_derivative(x)
+    elif a == 5:
+        return l * linear_derivative(x)
+    elif a == 6:
+        return l * tanh_derivative(x)
+    elif a == 7:
+        return l * relu_derivative(x)
+    elif a == 8:
+        return l * softmax_derivative(x)
 
 
 def feed_forward(n, w, b, af):
@@ -165,84 +187,24 @@ def feed_forward(n, w, b, af):
 
 def back_propagate(n, w, b, af, label, lr):
     loss = label - n[-1]
-    # loss = loss.T
-    # print(label, "\n")
-    # print(n[-1], "\n")
-    # print(loss, "\n")
-    if af == 0:
-        delta = loss * gaussian_derivative(n[-1])
-    elif af == 1:
-        delta = loss * sigmoid_derivative(n[-1])
-    elif af == 2:
-        delta = loss * step_derivative(n[-1])
-    elif af == 3:
-        delta = loss * sign_derivative(n[-1])
-    elif af == 4:
-        delta = loss * saturated_linear_derivative(n[-1])
-    elif af == 5:
-        delta = loss * linear_derivative(n[-1])
-    elif af == 6:
-        delta = loss * tanh_derivative(n[-1])
-    elif af == 7:
-        delta = loss * relu_derivative(n[-1])
-    elif af == 8:
-        delta = loss * softmax_derivative(n[-1])
+    delta = af_derivative_cal(loss, n[-1], af)
 
     next_w = w[-1].copy()
-    # print(b[-1], '\n')
     b[-1] += np.sum(delta, axis=0, keepdims=True) * lr
-    # print(delta.flatten())
-    # print(b[-1], "\n")
     for k in range(len(w[-1].T)):
-        # print(w[-1].T[k])
         w[-1].T[k] += (lr * delta * n[-2][k]).flatten()
-        # print(n[-2][k])
-        # print((delta * n[-2][k]).flatten())
-        # print((lr * delta * n[-2][k]).flatten())
-        # print(next_w.T[k])
-        # print(w[-1].T[k], "\n")
 
     for k in reversed(range(len(w) - 1)):
         loss = next_w.T.dot(delta)
-        # loss = loss.T
-        # print(label, "\n")
-        # print(n[-1], "\n")
-        # print(loss, "\n")
-        if af == 0:
-            delta = loss * gaussian_derivative(n[k + 1])
-        elif af == 1:
-            delta = loss * sigmoid_derivative(n[k + 1])
-        elif af == 2:
-            delta = loss * step_derivative(n[k + 1])
-        elif af == 3:
-            delta = loss * sign_derivative(n[k + 1])
-        elif af == 4:
-            delta = loss * saturated_linear_derivative(n[k + 1])
-        elif af == 5:
-            delta = loss * linear_derivative(n[k + 1])
-        elif af == 6:
-            delta = loss * tanh_derivative(n[k + 1])
-        elif af == 7:
-            delta = loss * relu_derivative(n[k + 1])
-        elif af == 8:
-            delta = loss * softmax_derivative(n[k + 1])
+        delta = af_derivative_cal(loss, n[k + 1], af)
         next_w = w[k].copy()
-        # print(b, '\n')
         b[k] += np.sum(delta, axis=0, keepdims=True) * lr
-        # print(delta.flatten())
-        # print(b[k], "\n")
         for j in range(len(w[k].T)):
-            # print(w[k].T[j])
             w[k].T[j] += (lr * delta * n[k][j]).flatten()
-            # print(n[k][j])
-            # print((delta * n[k][j]).flatten())
-            # print((lr * delta * n[k][j]).flatten())
-            # print(next_w.T[j])
-            # print(w[k].T[j], "\n")
 
 
 def train(data, label, layer_num, hiddenL_neuron_num, activation_function=1, epoch=20, learning_rate=0.1):
-    input_neuron_num = data.shape[1]
+    data_num, input_neuron_num = data.shape
     output_neuron_num = label.max() + 1
     label01 = []
 
@@ -258,13 +220,19 @@ def train(data, label, layer_num, hiddenL_neuron_num, activation_function=1, epo
     """ Making random wights and biases """
     wi = []
     bi = []
-    for i in range(layer_num - 1):
-        if i == 0:
-            tmp = np.random.rand(hiddenL_neuron_num[0], input_neuron_num)
-        elif i == layer_num - 2:
-            tmp = np.random.rand(output_neuron_num, hiddenL_neuron_num[i - 1])
-        else:
-            tmp = np.random.rand(hiddenL_neuron_num[i], hiddenL_neuron_num[i - 1])
+    if layer_num > 2:
+        for i in range(layer_num - 1):
+            if i == 0:
+                tmp = np.random.rand(hiddenL_neuron_num[0], input_neuron_num)
+            elif i == layer_num - 2:
+                tmp = np.random.rand(output_neuron_num, hiddenL_neuron_num[i - 1])
+            else:
+                tmp = np.random.rand(hiddenL_neuron_num[i], hiddenL_neuron_num[i - 1])
+            wi.append(tmp)
+            bias = np.random.rand(1, 1)
+            bi.append(bias)
+    else:
+        tmp = np.random.rand(output_neuron_num, input_neuron_num)
         wi.append(tmp)
         bias = np.random.rand(1, 1)
         bi.append(bias)
@@ -279,6 +247,9 @@ def train(data, label, layer_num, hiddenL_neuron_num, activation_function=1, epo
             neurons.append(np.zeros(output_neuron_num).T)
             feed_forward(neurons, wi, bi, activation_function)
             back_propagate(neurons, wi, bi, activation_function, label01[j], learning_rate)
+            # if j == 0:
+            #     print(neurons[-1])
+            #     print(label[j], "\n")
 
     with open('wights.pkl', 'wb') as file:
         pickle.dump(len(wi), file)
